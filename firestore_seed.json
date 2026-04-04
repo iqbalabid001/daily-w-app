@@ -1,0 +1,47 @@
+{
+  "messages": [
+    {
+      "id": "sample_morning_001",
+      "text": "Yeah, skip it. You've skipped harder things before.",
+      "slot": "morning",
+      "archetype": "reverse_psychology",
+      "tone": "sarcastic",
+      "humor_style": "dry",
+      "active": true,
+      "scheduledDate": "2026-04-05T08:00:00.000Z"
+    },
+    {
+      "id": "sample_afternoon_001",
+      "text": "Look at you. Functioning. Iconic.",
+      "slot": "afternoon",
+      "archetype": "mock_confidence",
+      "tone": "sarcastic",
+      "humor_style": "deadpan",
+      "active": true,
+      "scheduledDate": "2026-04-05T13:00:00.000Z"
+    },
+    {
+      "id": "sample_evening_001",
+      "text": "You can stop for today. Tomorrow still exists.",
+      "slot": "evening",
+      "archetype": "permission_to_rest",
+      "tone": "chill",
+      "humor_style": "dry",
+      "active": true,
+      "scheduledDate": "2026-04-05T20:00:00.000Z"
+    }
+  ],
+  "users": {
+    "_schema": {
+      "uid": "string (Firebase Auth UID)",
+      "nickname": "string | null",
+      "tonePreference": "sarcastic | chill | chaotic",
+      "notificationTime": "morning | afternoon | evening",
+      "isPremium": "boolean",
+      "streakCount": "number",
+      "favoriteMessageIds": "array<string>",
+      "createdAt": "timestamp",
+      "lastOpenedAt": "timestamp"
+    }
+  }
+}

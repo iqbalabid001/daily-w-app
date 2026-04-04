@@ -1,0 +1,75 @@
+# ── Flutter / Dart ──────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+/coverage/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+app.*.symbols
+app.*.map.json
+
+# ── Android ─────────────────────────────────────────────────────
+**/android/**/gradle-wrapper.jar
+**/android/.gradle/
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
+
+# ── iOS / macOS ──────────────────────────────────────────────────
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.moved-aside
+**/ios/**/*.pbxuser
+**/ios/**/*.perspectivev3
+**/ios/**/DerivedData/
+**/ios/**/Pods/
+**/ios/**/xcuserdata
+**/ios/.generated/
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+
+# ── Firebase / sensitive ─────────────────────────────────────────
+# google-services.json and GoogleService-Info.plist contain project keys.
+# Commit them only if your repo is private AND you have no CI secrets exposure.
+# Uncomment the lines below to exclude them:
+# android/app/google-services.json
+# ios/Runner/GoogleService-Info.plist
+
+# ── IDE / OS ─────────────────────────────────────────────────────
+.DS_Store
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+Thumbs.db
+
+# ── Misc ─────────────────────────────────────────────────────────
+*.class
+*.log
+*.pyc
+*.swp
+.atom/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
