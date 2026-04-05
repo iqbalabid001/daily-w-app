@@ -62,6 +62,10 @@ app.*.map.json
 *.iws
 Thumbs.db
 
+# ── Secrets ──────────────────────────────────────────────────────
+scripts/serviceAccountKey.json
+scripts/node_modules/
+
 # ── Misc ─────────────────────────────────────────────────────────
 *.class
 *.log
