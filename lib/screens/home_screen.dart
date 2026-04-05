@@ -6,6 +6,7 @@ import '../services/user_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/message_card.dart';
 import '../widgets/slot_badge.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   /// Pre-loaded from main() (returning users) or onboarding (new users).
@@ -90,6 +91,19 @@ class _HomeScreenState extends State<HomeScreen> {
   bool get _isFavorited =>
       _profile?.favoriteMessageIds.contains(_message?.id) ?? false;
 
+  Future<void> _openSettings() async {
+    if (_profile == null) return;
+    final updated = await Navigator.push<UserProfile>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SettingsScreen(profile: _profile!),
+      ),
+    );
+    if (updated != null && mounted) {
+      setState(() => _profile = updated);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -104,7 +118,10 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 40),
               _body(),
               const SizedBox(height: 40),
-              _BottomBar(profile: _profile),
+              _BottomBar(
+                profile: _profile,
+                onSettingsTap: _openSettings,
+              ),
               const SizedBox(height: 12),
             ],
           ),
@@ -202,7 +219,8 @@ class _PremiumButton extends StatelessWidget {
 
 class _BottomBar extends StatelessWidget {
   final UserProfile? profile;
-  const _BottomBar({required this.profile});
+  final VoidCallback onSettingsTap;
+  const _BottomBar({required this.profile, required this.onSettingsTap});
 
   @override
   Widget build(BuildContext context) {
@@ -211,9 +229,7 @@ class _BottomBar extends StatelessWidget {
         _NavIcon(
           icon: Icons.settings_outlined,
           label: 'Settings',
-          onTap: () {
-            // TODO: open settings
-          },
+          onTap: onSettingsTap,
         ),
         const Spacer(),
         _NavIcon(
