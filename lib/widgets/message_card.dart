@@ -69,7 +69,7 @@ class _MessageCardState extends State<MessageCard>
 
   void _onShare() {
     Share.share(
-      '"${widget.message.text}"\n\n— Daily W',
+      '💬 ${widget.message.text}\n\n— Daily W',
       subject: 'Your Daily W',
     );
   }

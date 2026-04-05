@@ -8,7 +8,16 @@ import '../widgets/message_card.dart';
 import '../widgets/slot_badge.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  /// Pre-loaded from main() (returning users) or onboarding (new users).
+  /// When provided, the screen renders immediately without any loading state.
+  final UserProfile? initialProfile;
+  final DailyWMessage? preloadedMessage;
+
+  const HomeScreen({
+    super.key,
+    this.initialProfile,
+    this.preloadedMessage,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -28,14 +37,19 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _initialize();
+    if (widget.initialProfile != null) {
+      // Data was pre-loaded — skip all async work and render instantly.
+      _profile = widget.initialProfile;
+      _message = widget.preloadedMessage;
+      _loading = false;
+    } else {
+      _initialize();
+    }
   }
 
   Future<void> _initialize() async {
     try {
-      // Step 1: sign in + load/create user doc
       final profile = await _userService.signInAndLoad();
-      // Step 2: fetch today's message for the current slot
       final message = await _messageService.getTodaysMessage(_currentSlot);
       if (mounted) {
         setState(() {
@@ -45,7 +59,9 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() { _loading = false; _error = e.toString(); });
+      if (mounted) {
+        setState(() { _loading = false; _error = e.toString(); });
+      }
     }
   }
 
@@ -122,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// ── Top bar ──────────────────────────────────────────────────────────────────
+// ── Top bar ───────────────────────────────────────────────────────────────────
 
 class _TopBar extends StatelessWidget {
   final bool isPremium;
@@ -132,7 +148,6 @@ class _TopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        // App name / logo
         const Text(
           'Daily W',
           style: TextStyle(
@@ -146,7 +161,8 @@ class _TopBar extends StatelessWidget {
         if (!isPremium)
           _PremiumButton()
         else
-          const Icon(Icons.workspace_premium, color: Color(0xFFFFC107), size: 22),
+          const Icon(Icons.workspace_premium,
+              color: Color(0xFFFFC107), size: 22),
       ],
     );
   }
@@ -157,7 +173,6 @@ class _PremiumButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // TODO: navigate to paywall
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Premium coming soon!')),
         );
@@ -183,7 +198,7 @@ class _PremiumButton extends StatelessWidget {
   }
 }
 
-// ── Bottom bar ───────────────────────────────────────────────────────────────
+// ── Bottom bar ────────────────────────────────────────────────────────────────
 
 class _BottomBar extends StatelessWidget {
   final UserProfile? profile;
@@ -240,7 +255,7 @@ class _NavIcon extends StatelessWidget {
   }
 }
 
-// ── State cards ──────────────────────────────────────────────────────────────
+// ── State cards ───────────────────────────────────────────────────────────────
 
 class _LoadingCard extends StatelessWidget {
   const _LoadingCard();
@@ -251,7 +266,8 @@ class _LoadingCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircularProgressIndicator(color: AppTheme.accent, strokeWidth: 2),
+          const CircularProgressIndicator(
+              color: AppTheme.accent, strokeWidth: 2),
           const SizedBox(height: 20),
           Text(
             'Loading your W...',
