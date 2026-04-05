@@ -12,7 +12,12 @@
           "package_name": "com.dailyw.daily_w"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "601741535935-57fi8c0blrahjj2mqud2o7gttsusvof3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCoRwznv-5097scwn4_0yVip9MtuBCf-j0"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "601741535935-57fi8c0blrahjj2mqud2o7gttsusvof3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "601741535935-h52tlfpi074i7gigbdl0u90r6619n3vh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.dailyw.dailyw"
+              }
+            }
+          ]
         }
       }
     }
