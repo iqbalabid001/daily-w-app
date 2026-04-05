@@ -10,10 +10,22 @@ class MessageService {
   CollectionReference<Map<String, dynamic>> get _messages =>
       _db.collection('messages');
 
-  /// Returns today's active message for [timeSlot] ('morning'|'afternoon'|'evening').
-  Future<DailyWMessage?> getTodaysMessage(String timeSlot) async {
+  /// Returns the time slot name for the current hour.
+  ///   06:00–11:59 → 'morning'
+  ///   12:00–17:59 → 'afternoon'
+  ///   18:00–05:59 → 'evening'
+  static String getCurrentSlot() {
+    final hour = DateTime.now().hour;
+    if (hour >= 6 && hour < 12) return 'morning';
+    if (hour >= 12 && hour < 18) return 'afternoon';
+    return 'evening';
+  }
+
+  /// Returns today's active message for [slot].
+  /// Picks the most recently scheduled active document for that slot.
+  Future<DailyWMessage?> getTodaysMessage(String slot) async {
     final snap = await _messages
-        .where('slot', isEqualTo: timeSlot)
+        .where('slot', isEqualTo: slot)
         .where('active', isEqualTo: true)
         .orderBy('scheduledDate', descending: true)
         .limit(1)
@@ -24,13 +36,24 @@ class MessageService {
     return DailyWMessage.fromMap(doc.data(), doc.id);
   }
 
-  /// Returns the last [days] days of messages for the history view (free: 3 days).
+  /// Records a like or dislike reaction on a message.
+  Future<void> recordReaction(String messageId, bool isLike) async {
+    final field = isLike ? 'likeCount' : 'dislikeCount';
+    await _messages
+        .doc(messageId)
+        .update({field: FieldValue.increment(1)});
+  }
+
+  /// Returns messages from the last [days] days (free tier: 3, premium: unlimited).
   Future<List<DailyWMessage>> getHistory({int days = 3}) async {
-    final cutoff = DateTime.now().subtract(Duration(days: days));
+    final cutoff = DateTime.now()
+        .subtract(Duration(days: days))
+        .toUtc()
+        .toIso8601String();
+
     final snap = await _messages
         .where('active', isEqualTo: true)
-        .where('scheduledDate',
-            isGreaterThanOrEqualTo: cutoff.toIso8601String())
+        .where('scheduledDate', isGreaterThanOrEqualTo: cutoff)
         .orderBy('scheduledDate', descending: true)
         .get();
 

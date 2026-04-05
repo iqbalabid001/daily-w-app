@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
-/// Small badge showing the current time slot (Morning / Afternoon / Evening W).
 class SlotBadge extends StatelessWidget {
   final String timeSlot; // 'morning' | 'afternoon' | 'evening'
 
@@ -17,18 +17,37 @@ class SlotBadge extends StatelessWidget {
         'morning' => Icons.wb_sunny_outlined,
         'afternoon' => Icons.bolt_outlined,
         'evening' => Icons.nightlight_outlined,
-        _ => Icons.star_outlined,
+        _ => Icons.auto_awesome_outlined,
       };
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(_icon, size: 14, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(width: 4),
-        Text(_label, style: Theme.of(context).textTheme.bodySmall),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppTheme.accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppTheme.accent.withValues(alpha: 0.25),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(_icon, size: 13, color: AppTheme.accent),
+          const SizedBox(width: 5),
+          Text(
+            _label,
+            style: const TextStyle(
+              color: AppTheme.accent,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
