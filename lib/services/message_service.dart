@@ -39,9 +39,13 @@ class MessageService {
   /// Records a like or dislike reaction on a message.
   Future<void> recordReaction(String messageId, bool isLike) async {
     final field = isLike ? 'likeCount' : 'dislikeCount';
-    await _messages
-        .doc(messageId)
-        .update({field: FieldValue.increment(1)});
+    try {
+      await _messages
+          .doc(messageId)
+          .update({field: FieldValue.increment(1)});
+    } catch (_) {
+      // Silently swallow — reaction counts are non-critical.
+    }
   }
 
   /// Returns messages from the last [days] days (free tier: 3, premium: unlimited).

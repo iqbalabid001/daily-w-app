@@ -3,10 +3,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Messages: anyone authenticated can read active messages; only admin writes
+    // Messages: anyone authenticated can read active messages.
+    // Clients may only increment likeCount / dislikeCount — nothing else.
     match /messages/{messageId} {
       allow read: if request.auth != null && resource.data.active == true;
-      allow write: if false; // managed via Firebase Admin SDK / console
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['likeCount', 'dislikeCount']);
+      allow create, delete: if false; // admin only
     }
 
     // Users: each user can only read and write their own document
