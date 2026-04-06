@@ -48,6 +48,16 @@ class MessageService {
     }
   }
 
+  /// Fetches full message documents for a list of [ids] (used for favorites).
+  Future<List<DailyWMessage>> getFavorites(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    final docs = await Future.wait(ids.map((id) => _messages.doc(id).get()));
+    return docs
+        .where((d) => d.exists && d.data() != null)
+        .map((d) => DailyWMessage.fromMap(d.data()!, d.id))
+        .toList();
+  }
+
   /// Returns messages from the last [days] days (free tier: 3, premium: unlimited).
   Future<List<DailyWMessage>> getHistory({int days = 3}) async {
     final cutoff = DateTime.now()

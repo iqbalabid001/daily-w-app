@@ -1,3 +1,6 @@
+// Sentinel for copyWith — distinguishes "not passed" from "explicitly null".
+const _undefined = Object();
+
 class UserProfile {
   final String uid;
   final String? nickname;
@@ -6,7 +9,6 @@ class UserProfile {
   final int streakCount;
   final List<String> favoriteMessageIds;
   final bool onboardingComplete;
-  // Per-slot notification times stored as 'HH:mm' strings (24-hour)
   final Map<String, String> notificationTimes;
 
   const UserProfile({
@@ -57,8 +59,10 @@ class UserProfile {
         'notificationTimes': notificationTimes,
       };
 
+  /// Nullable [nickname] is supported: pass `nickname: null` to explicitly
+  /// clear it. Omit the parameter entirely to keep the existing value.
   UserProfile copyWith({
-    String? nickname,
+    Object? nickname = _undefined,
     String? tonePreference,
     bool? isPremium,
     int? streakCount,
@@ -68,7 +72,9 @@ class UserProfile {
   }) {
     return UserProfile(
       uid: uid,
-      nickname: nickname ?? this.nickname,
+      nickname: identical(nickname, _undefined)
+          ? this.nickname
+          : nickname as String?,
       tonePreference: tonePreference ?? this.tonePreference,
       isPremium: isPremium ?? this.isPremium,
       streakCount: streakCount ?? this.streakCount,
@@ -77,4 +83,6 @@ class UserProfile {
       notificationTimes: notificationTimes ?? this.notificationTimes,
     );
   }
+
+  String get displayName => nickname?.isNotEmpty == true ? nickname! : 'champ';
 }

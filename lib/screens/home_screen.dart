@@ -6,6 +6,8 @@ import '../services/user_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/message_card.dart';
 import '../widgets/slot_badge.dart';
+import 'premium_screen.dart';
+import 'profile_screen.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -68,14 +70,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _toggleFavorite() async {
     if (_profile == null || _message == null) return;
-    final updated = await _userService.toggleFavorite(
-      _profile!.uid,
-      _message!.id,
-      _profile!.favoriteMessageIds,
-    );
-    setState(() {
-      _profile = _profile!.copyWith(favoriteMessageIds: updated);
-    });
+    try {
+      final updated = await _userService.toggleFavorite(
+        _profile!.uid,
+        _message!.id,
+        _profile!.favoriteMessageIds,
+      );
+      if (mounted) {
+        setState(() {
+          _profile = _profile!.copyWith(favoriteMessageIds: updated);
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not save — check your connection.')),
+        );
+      }
+    }
   }
 
   void _onLike() {
@@ -104,6 +116,23 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _openProfile() {
+    if (_profile == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProfileScreen(profile: _profile!),
+      ),
+    );
+  }
+
+  void _openPremium() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PremiumScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,13 +143,17 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             children: [
               const SizedBox(height: 12),
-              _TopBar(isPremium: _profile?.isPremium ?? false),
+              _TopBar(
+                isPremium: _profile?.isPremium ?? false,
+                onPremiumTap: _openPremium,
+              ),
               const SizedBox(height: 40),
               _body(),
               const SizedBox(height: 40),
               _BottomBar(
                 profile: _profile,
                 onSettingsTap: _openSettings,
+                onProfileTap: _openProfile,
               ),
               const SizedBox(height: 12),
             ],
@@ -159,7 +192,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _TopBar extends StatelessWidget {
   final bool isPremium;
-  const _TopBar({required this.isPremium});
+  final VoidCallback onPremiumTap;
+  const _TopBar({required this.isPremium, required this.onPremiumTap});
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +210,7 @@ class _TopBar extends StatelessWidget {
         ),
         const Spacer(),
         if (!isPremium)
-          _PremiumButton()
+          _PremiumButton(onTap: onPremiumTap)
         else
           const Icon(Icons.workspace_premium,
               color: Color(0xFFFFC107), size: 22),
@@ -186,14 +220,13 @@ class _TopBar extends StatelessWidget {
 }
 
 class _PremiumButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _PremiumButton({required this.onTap});
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Premium coming soon!')),
-        );
-      },
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
@@ -220,7 +253,13 @@ class _PremiumButton extends StatelessWidget {
 class _BottomBar extends StatelessWidget {
   final UserProfile? profile;
   final VoidCallback onSettingsTap;
-  const _BottomBar({required this.profile, required this.onSettingsTap});
+  final VoidCallback onProfileTap;
+
+  const _BottomBar({
+    required this.profile,
+    required this.onSettingsTap,
+    required this.onProfileTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -235,9 +274,7 @@ class _BottomBar extends StatelessWidget {
         _NavIcon(
           icon: Icons.person_outline,
           label: 'Profile',
-          onTap: () {
-            // TODO: open profile / favorites / streaks
-          },
+          onTap: onProfileTap,
         ),
       ],
     );
