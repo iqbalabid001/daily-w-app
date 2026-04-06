@@ -63,4 +63,19 @@ class UserService {
   Future<void> incrementStreak(String uid) async {
     await _users.doc(uid).update({'streakCount': FieldValue.increment(1)});
   }
+
+  /// Saves the FCM token and current device timezone offset.
+  /// Called on every app launch so stale tokens and timezone shifts are
+  /// caught automatically.
+  Future<void> saveToken(
+      String uid, String token, int timezoneOffsetMinutes) async {
+    try {
+      await _users.doc(uid).update({
+        'fcmToken': token,
+        'timezoneOffsetMinutes': timezoneOffsetMinutes,
+      });
+    } catch (_) {
+      // Non-critical — notifications simply won't fire until next launch.
+    }
+  }
 }

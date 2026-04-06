@@ -1,59 +1,71 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
+import 'user_service.dart';
 
-/// Handles push notifications via Firebase Cloud Messaging.
-/// Free users subscribe to 'morning'; premium users subscribe to all three slots.
+/// Top-level FCM background handler — must be top-level (Firebase requirement).
+/// The system renders the notification automatically; nothing extra needed here.
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage _) async {}
+
 class NotificationService {
   final FirebaseMessaging _fcm;
+  final UserService _userService;
 
-  NotificationService({FirebaseMessaging? fcm})
-      : _fcm = fcm ?? FirebaseMessaging.instance;
+  NotificationService({FirebaseMessaging? fcm, UserService? userService})
+      : _fcm = fcm ?? FirebaseMessaging.instance,
+        _userService = userService ?? UserService();
 
-  static const List<String> allSlots = ['morning', 'afternoon', 'evening'];
+  /// Call once after Firebase.initializeApp().
+  /// Requests permission, saves the FCM token + timezone to Firestore, and
+  /// wires foreground message display via a SnackBar.
+  Future<void> initialize({
+    required String uid,
+    required BuildContext context,
+  }) async {
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  /// Requests OS-level notification permission. Returns true if granted.
-  Future<bool> requestPermission() async {
-    final settings = await _fcm.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
+    // Request OS notification permission (shows dialog on Android 13+).
+    await _fcm.requestPermission(alert: true, badge: false, sound: true);
+
+    // Save token + timezone so the Cloud Function knows how to reach this user.
+    await _saveTokenAndTimezone(uid);
+
+    // Refresh token if FCM rotates it (rare, but must be handled).
+    _fcm.onTokenRefresh.listen(
+      (token) => _userService.saveToken(
+        uid,
+        token,
+        DateTime.now().timeZoneOffset.inMinutes,
+      ),
     );
-    return settings.authorizationStatus == AuthorizationStatus.authorized ||
-        settings.authorizationStatus == AuthorizationStatus.provisional;
+
+    // When app is in foreground, show the message as a SnackBar banner.
+    FirebaseMessaging.onMessage.listen((message) {
+      final notif = message.notification;
+      if (notif == null) return;
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            notif.body ?? notif.title ?? '',
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          duration: const Duration(seconds: 6),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    });
   }
 
-  /// Returns the FCM registration token for this device.
-  Future<String?> getToken() => _fcm.getToken();
-
-  /// Subscribes to a time-slot topic so the device receives that slot's push.
-  Future<void> subscribeToSlot(String slot) =>
-      _fcm.subscribeToTopic(slot);
-
-  /// Unsubscribes from a time-slot topic.
-  Future<void> unsubscribeFromSlot(String slot) =>
-      _fcm.unsubscribeFromTopic(slot);
-
-  /// Convenience: subscribe to all 3 slots (premium).
-  Future<void> subscribeToAll() async {
-    for (final slot in allSlots) {
-      await subscribeToSlot(slot);
-    }
-  }
-
-  /// Convenience: downgrade to morning-only (free tier).
-  Future<void> downgradeToFree() async {
-    await subscribeToSlot('morning');
-    for (final slot in ['afternoon', 'evening']) {
-      await unsubscribeFromSlot(slot);
-    }
-  }
-
-  /// Listen for foreground messages and invoke [onMessage].
-  void onForegroundMessage(void Function(RemoteMessage) onMessage) {
-    FirebaseMessaging.onMessage.listen(onMessage);
-  }
-
-  /// Listen for notification-tap when app is in background.
-  void onNotificationTap(void Function(RemoteMessage) onTap) {
-    FirebaseMessaging.onMessageOpenedApp.listen(onTap);
+  Future<void> _saveTokenAndTimezone(String uid) async {
+    final token = await _fcm.getToken();
+    if (token == null) return;
+    await _userService.saveToken(
+      uid,
+      token,
+      DateTime.now().timeZoneOffset.inMinutes,
+    );
   }
 }

@@ -10,6 +10,9 @@ class UserProfile {
   final List<String> favoriteMessageIds;
   final bool onboardingComplete;
   final Map<String, String> notificationTimes;
+  /// Device timezone offset in minutes from UTC (e.g. UTC+5:30 → 330).
+  /// Updated on every app launch so the Cloud Function can localise send times.
+  final int timezoneOffsetMinutes;
 
   const UserProfile({
     required this.uid,
@@ -24,6 +27,7 @@ class UserProfile {
       'afternoon': '13:00',
       'evening': '20:00',
     },
+    this.timezoneOffsetMinutes = 0,
   });
 
   factory UserProfile.fromMap(Map<String, dynamic> map, String uid) {
@@ -46,6 +50,7 @@ class UserProfile {
           List<String>.from(map['favoriteMessageIds'] ?? const []),
       onboardingComplete: map['onboardingComplete'] as bool? ?? false,
       notificationTimes: times,
+      timezoneOffsetMinutes: map['timezoneOffsetMinutes'] as int? ?? 0,
     );
   }
 
@@ -57,6 +62,7 @@ class UserProfile {
         'favoriteMessageIds': favoriteMessageIds,
         'onboardingComplete': onboardingComplete,
         'notificationTimes': notificationTimes,
+        'timezoneOffsetMinutes': timezoneOffsetMinutes,
       };
 
   /// Nullable [nickname] is supported: pass `nickname: null` to explicitly
@@ -69,6 +75,7 @@ class UserProfile {
     List<String>? favoriteMessageIds,
     bool? onboardingComplete,
     Map<String, String>? notificationTimes,
+    int? timezoneOffsetMinutes,
   }) {
     return UserProfile(
       uid: uid,
@@ -81,6 +88,8 @@ class UserProfile {
       favoriteMessageIds: favoriteMessageIds ?? this.favoriteMessageIds,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
       notificationTimes: notificationTimes ?? this.notificationTimes,
+      timezoneOffsetMinutes:
+          timezoneOffsetMinutes ?? this.timezoneOffsetMinutes,
     );
   }
 

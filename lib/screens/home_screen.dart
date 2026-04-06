@@ -6,6 +6,7 @@ import '../services/user_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/message_card.dart';
 import '../widgets/slot_badge.dart';
+import '../services/notification_service.dart';
 import 'premium_screen.dart';
 import 'profile_screen.dart';
 import 'settings_screen.dart';
@@ -29,6 +30,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _userService = UserService();
   final _messageService = MessageService();
+  final _notificationService = NotificationService();
 
   UserProfile? _profile;
   DailyWMessage? _message;
@@ -45,9 +47,19 @@ class _HomeScreenState extends State<HomeScreen> {
       _profile = widget.initialProfile;
       _message = widget.preloadedMessage;
       _loading = false;
+      // Still need to set up notifications even for returning users.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _initNotifications());
     } else {
       _initialize();
     }
+  }
+
+  Future<void> _initNotifications() async {
+    if (_profile == null || !mounted) return;
+    await _notificationService.initialize(
+      uid: _profile!.uid,
+      context: context,
+    );
   }
 
   Future<void> _initialize() async {
@@ -60,6 +72,9 @@ class _HomeScreenState extends State<HomeScreen> {
           _message = message;
           _loading = false;
         });
+        // initNotifications needs context to be ready.
+        WidgetsBinding.instance
+            .addPostFrameCallback((_) => _initNotifications());
       }
     } catch (e) {
       if (mounted) {
