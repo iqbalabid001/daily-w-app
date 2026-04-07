@@ -9,7 +9,7 @@ const _archetypeMap = <String, (String, String, Color)>{
   'permission_to_rest':      ('✨', 'REST',  Color(0xFF7C3AED)),
   'reverse_psychology':      ('🧢', 'CAP',   Color(0xFF3B82F6)),
   'fake_permission':         ('🚪', 'BYE',   Color(0xFF10B981)),
-  'gentle_callout':          ('👀', 'SIS',   Color(0xFFEC4899)),
+  'gentle_callout':          ('🫵', 'YO',    Color(0xFFEC4899)),
   'mock_confidence':         ('🔥', 'SLAY',  Color(0xFFE94560)),
   'anti_motivation':         ('💀', 'DEAD',  Color(0xFF8892A4)),
   'quiet_confidence':        ('💪', 'GRIP',  Color(0xFFEF4444)),
