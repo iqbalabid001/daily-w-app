@@ -42,8 +42,9 @@ dependencies:
   # Sharing
   share_plus: ^10.1.4
 
-  # Payments
+  # Payments — RevenueCat
   purchases_flutter: ^8.0.0
+  purchases_ui_flutter: ^8.0.0
 
 dev_dependencies:
   flutter_test:

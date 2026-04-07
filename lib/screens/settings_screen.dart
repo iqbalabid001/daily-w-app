@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/user_profile.dart';
+import '../services/purchase_service.dart';
 import '../services/user_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/gradient_button.dart';
@@ -16,6 +17,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final _userService = UserService();
+  final _purchaseService = PurchaseService();
   final _nicknameController = TextEditingController();
 
   late double _morningHour;
@@ -183,6 +185,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailingIcon: Icons.check,
               fullWidth: true,
               isLoading: _saving,
+            ),
+
+            // ── Subscription management ─────────────────────────────────
+            if (widget.profile.isPremium) ...[
+              const SizedBox(height: 16),
+              _ManageSubscriptionButton(
+                onTap: () => _purchaseService.presentCustomerCenter(),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ManageSubscriptionButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _ManageSubscriptionButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+              color: const Color(0xFFFFC107).withValues(alpha: 0.3)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.workspace_premium,
+                color: Color(0xFFFFC107), size: 16),
+            SizedBox(width: 8),
+            Text(
+              'Manage Subscription',
+              style: TextStyle(
+                color: Color(0xFFFFC107),
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),

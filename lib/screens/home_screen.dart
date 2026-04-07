@@ -158,6 +158,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _openPremium() async {
     if (_profile == null) return;
+    // PremiumScreen hosts the RevenueCat PaywallView.
+    // It returns an updated UserProfile on successful purchase/restore.
     final updated = await Navigator.push<UserProfile>(
       context,
       MaterialPageRoute(
@@ -166,7 +168,32 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (updated != null && mounted) {
       setState(() => _profile = updated);
+      _showPremiumUnlockedBanner();
     }
+  }
+
+  void _showPremiumUnlockedBanner() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppTheme.surface,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        content: const Row(
+          children: [
+            Icon(Icons.workspace_premium, color: Color(0xFFFFC107), size: 18),
+            SizedBox(width: 10),
+            Text(
+              'Daily W Pro unlocked!',
+              style: TextStyle(
+                color: AppTheme.cardFg,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   void _openHistory() {

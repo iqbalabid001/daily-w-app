@@ -105,6 +105,9 @@ exports.sendScheduledNotifications = onSchedule(
       const notifTimes = user.notificationTimes ?? {};
 
       for (const slot of slots) {
+        // Free tier: morning W only. Afternoon + evening require Daily W Pro.
+        if (slot !== 'morning' && !user.isPremium) continue;
+
         if (notifTimes[slot] === localTime && messages[slot]) {
           tokensBySlot[slot].push(token);
           break; // one notification per firing, even if times coincidentally match two slots
