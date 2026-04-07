@@ -23,6 +23,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadFavorites();
   }
 
+  static String _streakLabel(int days) {
+    if (days == 0) return 'Streak';
+    if (days == 1) return '🔥 Just started';
+    if (days < 4) return '🔥 Heating up';
+    if (days < 7) return '🔥 On fire';
+    if (days < 14) return '🔥 W streak';
+    if (days < 30) return '🔥 Goated';
+    return '🔥 Legendary';
+  }
+
   Future<void> _loadFavorites() async {
     try {
       final favs = await _messageService
@@ -135,8 +145,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Expanded(
                   child: _StatCard(
-                    icon: Icons.local_fire_department_outlined,
-                    label: 'Streak',
+                    icon: Icons.local_fire_department_rounded,
+                    label: _streakLabel(profile.streakCount),
                     value: '${profile.streakCount}',
                     unit: profile.streakCount == 1 ? 'day' : 'days',
                     color: const Color(0xFFFF6B35),

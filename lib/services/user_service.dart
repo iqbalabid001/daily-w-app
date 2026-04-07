@@ -13,24 +13,71 @@ class UserService {
   CollectionReference<Map<String, dynamic>> get _users =>
       _db.collection('users');
 
-  /// Signs in anonymously if no session exists, then creates the Firestore
-  /// user document if this is a first-time user. Returns the resolved profile.
-  Future<UserProfile> signInAndLoad() async {
-    // 1. Ensure we have a Firebase Auth user
-    final authUser = _auth.currentUser ?? (await _auth.signInAnonymously()).user!;
+  /// Returns today's date as 'YYYY-MM-DD' in device local time.
+  static String _today() {
+    final now = DateTime.now();
+    final m = now.month.toString().padLeft(2, '0');
+    final d = now.day.toString().padLeft(2, '0');
+    return '${now.year}-$m-$d';
+  }
 
-    // 2. Try to load existing profile
+  /// Computes the new streak given the stored streak and last-opened date.
+  ///
+  /// Returns `(newStreak, changed)`.
+  /// - Same day → (current, false) — idempotent, no Firestore write needed.
+  /// - Yesterday → (current + 1, true) — consecutive day.
+  /// - Gap > 1 day / never opened before → (1, true) — reset.
+  static (int, bool) _computeStreak(int current, String? lastDate, String today) {
+    if (lastDate == null) return (1, true);          // first ever open
+    if (lastDate == today) return (current, false);  // already opened today
+
+    final last = DateTime.parse(lastDate);
+    final diff = DateTime.parse(today).difference(last).inDays;
+    if (diff == 1) return (current + 1, true);       // consecutive day ✓
+    return (1, true);                                 // missed ≥ 1 day → reset
+  }
+
+  /// Signs in anonymously if no session exists, creates the Firestore user
+  /// document for first-time users, and updates the streak on every open.
+  /// Returns the fully resolved (and streak-updated) profile.
+  Future<UserProfile> signInAndLoad() async {
+    // 1. Ensure we have a Firebase Auth user.
+    final authUser =
+        _auth.currentUser ?? (await _auth.signInAnonymously()).user!;
+
+    final today = _today();
+
+    // 2. Try to load existing profile.
     final doc = await _users.doc(authUser.uid).get();
     if (doc.exists && doc.data() != null) {
-      // Returning user — touch lastOpenedAt and return
-      await _users.doc(authUser.uid).update({
+      var profile = UserProfile.fromMap(doc.data()!, authUser.uid);
+
+      final (newStreak, changed) =
+          _computeStreak(profile.streakCount, profile.lastOpenedDate, today);
+
+      final updates = <String, dynamic>{
         'lastOpenedAt': FieldValue.serverTimestamp(),
-      });
-      return UserProfile.fromMap(doc.data()!, authUser.uid);
+      };
+
+      if (changed) {
+        updates['streakCount'] = newStreak;
+        updates['lastOpenedDate'] = today;
+        profile = profile.copyWith(
+          streakCount: newStreak,
+          lastOpenedDate: today,
+        );
+      }
+
+      await _users.doc(authUser.uid).update(updates);
+      return profile;
     }
 
-    // 3. First-time user — create profile with defaults
-    final newProfile = UserProfile(uid: authUser.uid);
+    // 3. First-time user — create profile with streak = 1.
+    final newProfile = UserProfile(
+      uid: authUser.uid,
+      streakCount: 1,
+      lastOpenedDate: today,
+    );
     await _users.doc(authUser.uid).set({
       ...newProfile.toMap(),
       'createdAt': FieldValue.serverTimestamp(),
@@ -57,11 +104,6 @@ class UserService {
     return isFav
         ? (List<String>.from(current)..remove(messageId))
         : [...current, messageId];
-  }
-
-  /// Increments the streak counter by 1.
-  Future<void> incrementStreak(String uid) async {
-    await _users.doc(uid).update({'streakCount': FieldValue.increment(1)});
   }
 
   /// Saves the FCM token and current device timezone offset.

@@ -13,6 +13,9 @@ class UserProfile {
   /// Device timezone offset in minutes from UTC (e.g. UTC+5:30 → 330).
   /// Updated on every app launch so the Cloud Function can localise send times.
   final int timezoneOffsetMinutes;
+  /// Last calendar day the user opened the app, in device local time ('YYYY-MM-DD').
+  /// Used to compute streak increments and resets.
+  final String? lastOpenedDate;
 
   const UserProfile({
     required this.uid,
@@ -28,6 +31,7 @@ class UserProfile {
       'evening': '20:00',
     },
     this.timezoneOffsetMinutes = 0,
+    this.lastOpenedDate,
   });
 
   factory UserProfile.fromMap(Map<String, dynamic> map, String uid) {
@@ -51,6 +55,7 @@ class UserProfile {
       onboardingComplete: map['onboardingComplete'] as bool? ?? false,
       notificationTimes: times,
       timezoneOffsetMinutes: map['timezoneOffsetMinutes'] as int? ?? 0,
+      lastOpenedDate: map['lastOpenedDate'] as String?,
     );
   }
 
@@ -63,6 +68,7 @@ class UserProfile {
         'onboardingComplete': onboardingComplete,
         'notificationTimes': notificationTimes,
         'timezoneOffsetMinutes': timezoneOffsetMinutes,
+        'lastOpenedDate': lastOpenedDate,
       };
 
   /// Nullable [nickname] is supported: pass `nickname: null` to explicitly
@@ -76,6 +82,7 @@ class UserProfile {
     bool? onboardingComplete,
     Map<String, String>? notificationTimes,
     int? timezoneOffsetMinutes,
+    String? lastOpenedDate,
   }) {
     return UserProfile(
       uid: uid,
@@ -90,6 +97,7 @@ class UserProfile {
       notificationTimes: notificationTimes ?? this.notificationTimes,
       timezoneOffsetMinutes:
           timezoneOffsetMinutes ?? this.timezoneOffsetMinutes,
+      lastOpenedDate: lastOpenedDate ?? this.lastOpenedDate,
     );
   }
 
