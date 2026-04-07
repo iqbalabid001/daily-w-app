@@ -24,10 +24,24 @@ void main() async {
   // Auth + profile load happens before runApp — native splash covers this.
   final profile = await userService.signInAndLoad();
 
-  // Pre-fetch today's message for returning users so HomeScreen shows instantly.
+  // Check if the app was cold-started from a notification tap.
+  // If so, show the message that was in that specific notification.
   DailyWMessage? message;
   if (profile.onboardingComplete) {
-    message = await messageService
+    final initialFcmMessage =
+        await FirebaseMessaging.instance.getInitialMessage();
+    final notifMessageId =
+        initialFcmMessage?.data['messageId'] as String?;
+
+    if (notifMessageId != null) {
+      // Fetch the exact message the user tapped on.
+      message = await messageService
+          .getMessageById(notifMessageId)
+          .catchError((_) => null);
+    }
+
+    // Fallback: show today's current-slot message.
+    message ??= await messageService
         .getTodaysMessage(MessageService.getCurrentSlot())
         .catchError((_) => null);
   }

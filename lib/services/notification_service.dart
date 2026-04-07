@@ -17,10 +17,15 @@ class NotificationService {
 
   /// Call once after Firebase.initializeApp().
   /// Requests permission, saves the FCM token + timezone to Firestore, and
-  /// wires foreground message display via a SnackBar.
+  /// wires foreground message display and notification-tap handling.
+  ///
+  /// [onNotificationTap] is called with the Firestore messageId whenever the
+  /// user taps a notification while the app is in background (not terminated).
+  /// Terminated-state taps are handled in main() via getInitialMessage().
   Future<void> initialize({
     required String uid,
     required BuildContext context,
+    void Function(String messageId)? onNotificationTap,
   }) async {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
@@ -56,6 +61,12 @@ class NotificationService {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    });
+
+    // When app is in background and user taps the notification.
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      final msgId = message.data['messageId'] as String?;
+      if (msgId != null) onNotificationTap?.call(msgId);
     });
   }
 

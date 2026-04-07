@@ -59,7 +59,21 @@ class _HomeScreenState extends State<HomeScreen> {
     await _notificationService.initialize(
       uid: _profile!.uid,
       context: context,
+      onNotificationTap: _loadMessageById,
     );
+  }
+
+  /// Fetches a specific message by ID and displays it on the card.
+  /// Called when the user taps a notification while the app is in background.
+  Future<void> _loadMessageById(String messageId) async {
+    try {
+      final msg = await _messageService.getMessageById(messageId);
+      if (msg != null && mounted) {
+        setState(() => _message = msg);
+      }
+    } catch (_) {
+      // Silently fall back to whatever message is already shown.
+    }
   }
 
   Future<void> _initialize() async {

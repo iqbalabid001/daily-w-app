@@ -48,6 +48,14 @@ class MessageService {
     }
   }
 
+  /// Fetches a single message by its Firestore document ID.
+  /// Returns null if the document doesn't exist.
+  Future<DailyWMessage?> getMessageById(String id) async {
+    final doc = await _messages.doc(id).get();
+    if (!doc.exists || doc.data() == null) return null;
+    return DailyWMessage.fromMap(doc.data()!, doc.id);
+  }
+
   /// Fetches full message documents for a list of [ids] (used for favorites).
   Future<List<DailyWMessage>> getFavorites(List<String> ids) async {
     if (ids.isEmpty) return [];
