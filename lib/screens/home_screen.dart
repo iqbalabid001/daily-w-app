@@ -176,9 +176,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 isPremium: _profile?.isPremium ?? false,
                 onPremiumTap: _openPremium,
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 16),
               _body(),
-              const SizedBox(height: 40),
+              const SizedBox(height: 16),
               _BottomBar(
                 profile: _profile,
                 onSettingsTap: _openSettings,

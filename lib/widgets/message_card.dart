@@ -6,18 +6,16 @@ import '../theme/app_theme.dart';
 // ── Archetype badge config ────────────────────────────────────────────────────
 // Each entry: (emoji, label, color)
 const _archetypeMap = <String, (String, String, Color)>{
-  'reverse_psychology': ('🧢', 'No cap', Color(0xFF7C3AED)),
-  'fake_permission':    ('✅', 'Permission granted', Color(0xFF10B981)),
-  'drill_sergeant':     ('💪', 'No excuses', Color(0xFFEF4444)),
-  'chill_friend':       ('🌊', 'Chill vibes', Color(0xFF3B82F6)),
-  'absurdist':          ('😤', 'Unhinged fr', Color(0xFFF59E0B)),
-  'honest_friend':      ('💯', 'Real talk', Color(0xFFEC4899)),
-  'hype_coach':         ('🔥', 'Slay', Color(0xFFE94560)),
-  'deadpan':            ('💀', 'Facts', Color(0xFF8892A4)),
-  'chaotic_good':       ('⚡', 'Main character', Color(0xFFF97316)),
-  'tough_love':         ('😤', 'Tough love', Color(0xFFEF4444)),
-  'sarcastic':          ('🙃', 'Lowkey tho', Color(0xFF7C3AED)),
-  'motivational':       ('🚀', 'Let\'s go', Color(0xFF10B981)),
+  'permission_to_rest':      ('✨', 'REST',  Color(0xFF7C3AED)),
+  'reverse_psychology':      ('🧢', 'CAP',   Color(0xFF3B82F6)),
+  'fake_permission':         ('🚪', 'BYE',   Color(0xFF10B981)),
+  'gentle_callout':          ('👀', 'SIS',   Color(0xFFEC4899)),
+  'mock_confidence':         ('🔥', 'SLAY',  Color(0xFFE94560)),
+  'anti_motivation':         ('💀', 'DEAD',  Color(0xFF8892A4)),
+  'quiet_confidence':        ('💪', 'GRIP',  Color(0xFFEF4444)),
+  'reality_check':           ('🎯', 'REAL',  Color(0xFFF97316)),
+  'backhanded_compliment':   ('😭', 'FACTS', Color(0xFFF59E0B)),
+  'deadline_reminder':       ('⏰', 'TICK',  Color(0xFFE94560)),
 };
 
 (String, String, Color) _badgeFor(String archetype) =>
