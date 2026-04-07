@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../widgets/message_card.dart';
 import '../widgets/slot_badge.dart';
 import '../services/notification_service.dart';
+import '../widgets/history_sheet.dart';
 import 'premium_screen.dart';
 import 'profile_screen.dart';
 import 'settings_screen.dart';
@@ -155,10 +156,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openPremium() {
-    Navigator.push(
+  Future<void> _openPremium() async {
+    if (_profile == null) return;
+    final updated = await Navigator.push<UserProfile>(
       context,
-      MaterialPageRoute(builder: (_) => const PremiumScreen()),
+      MaterialPageRoute(
+        builder: (_) => PremiumScreen(profile: _profile!),
+      ),
+    );
+    if (updated != null && mounted) {
+      setState(() => _profile = updated);
+    }
+  }
+
+  void _openHistory() {
+    if (_profile == null) return;
+    showHistorySheet(
+      context,
+      isPremium: _profile!.isPremium,
+      onUpgradeTap: _openPremium,
     );
   }
 
@@ -183,6 +199,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 profile: _profile,
                 onSettingsTap: _openSettings,
                 onProfileTap: _openProfile,
+                onHistoryTap: _openHistory,
               ),
               const SizedBox(height: 12),
             ],
@@ -283,11 +300,13 @@ class _BottomBar extends StatelessWidget {
   final UserProfile? profile;
   final VoidCallback onSettingsTap;
   final VoidCallback onProfileTap;
+  final VoidCallback onHistoryTap;
 
   const _BottomBar({
     required this.profile,
     required this.onSettingsTap,
     required this.onProfileTap,
+    required this.onHistoryTap,
   });
 
   @override
@@ -300,6 +319,12 @@ class _BottomBar extends StatelessWidget {
           onTap: onSettingsTap,
         ),
         const Spacer(),
+        _NavIcon(
+          icon: Icons.history_rounded,
+          label: 'History',
+          onTap: onHistoryTap,
+        ),
+        const SizedBox(width: 4),
         _NavIcon(
           icon: Icons.person_outline,
           label: 'Profile',

@@ -42,6 +42,9 @@ dependencies:
   # Sharing
   share_plus: ^10.1.4
 
+  # Payments
+  purchases_flutter: ^8.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

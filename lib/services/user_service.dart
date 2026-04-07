@@ -106,6 +106,12 @@ class UserService {
         : [...current, messageId];
   }
 
+  /// Sets isPremium on the user document and returns the updated profile.
+  Future<UserProfile> setPremium(UserProfile profile, bool value) async {
+    await _users.doc(profile.uid).update({'isPremium': value});
+    return profile.copyWith(isPremium: value);
+  }
+
   /// Saves the FCM token and current device timezone offset.
   /// Called on every app launch so stale tokens and timezone shifts are
   /// caught automatically.

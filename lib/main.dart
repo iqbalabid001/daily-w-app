@@ -8,6 +8,7 @@ import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/message_service.dart';
 import 'services/notification_service.dart';
+import 'services/purchase_service.dart';
 import 'services/user_service.dart';
 import 'theme/app_theme.dart';
 
@@ -23,6 +24,9 @@ void main() async {
 
   // Auth + profile load happens before runApp — native splash covers this.
   final profile = await userService.signInAndLoad();
+
+  // Initialize RevenueCat with the Firebase UID so purchases are user-scoped.
+  await PurchaseService.initialize(profile.uid);
 
   // Check if the app was cold-started from a notification tap.
   // If so, show the message that was in that specific notification.
