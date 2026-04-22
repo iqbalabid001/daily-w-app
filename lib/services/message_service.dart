@@ -10,6 +10,9 @@ class MessageService {
   CollectionReference<Map<String, dynamic>> get _messages =>
       _db.collection('messages');
 
+  CollectionReference<Map<String, dynamic>> get _users =>
+      _db.collection('users');
+
   /// Returns the time slot name for the current hour.
   ///   06:00–11:59 → 'morning'
   ///   12:00–17:59 → 'afternoon'
@@ -21,19 +24,76 @@ class MessageService {
     return 'evening';
   }
 
-  /// Returns today's active message for [slot].
-  /// Picks the most recently scheduled active document for that slot.
-  Future<DailyWMessage?> getTodaysMessage(String slot) async {
+  static String _todayLocal() {
+    final now = DateTime.now();
+    final m = now.month.toString().padLeft(2, '0');
+    final d = now.day.toString().padLeft(2, '0');
+    return '${now.year}-$m-$d';
+  }
+
+  /// Returns today's W for [slot] for the given user, using per-user rotation.
+  ///
+  /// Tracks seen message IDs in the user's Firestore doc under `seenMessageIds.{slot}`.
+  /// Once all messages for a slot are seen, resets and starts over.
+  /// Stores today's assignment under `todayAssigned.{slot}` so repeated calls
+  /// within the same day return the same message.
+  Future<DailyWMessage?> getOrAssignTodaysMessage(
+      String slot, String uid) async {
+    final today = _todayLocal();
+    final userRef = _users.doc(uid);
+
+    final userDoc = await userRef.get();
+    final userData = userDoc.data() ?? {};
+
+    final todayAssigned =
+        Map<String, dynamic>.from(userData['todayAssigned'] as Map? ?? {});
+    final seenMessageIds =
+        Map<String, dynamic>.from(userData['seenMessageIds'] as Map? ?? {});
+    final seenForSlot =
+        List<String>.from(seenMessageIds[slot] as List? ?? []);
+
+    // If already assigned today, return that message.
+    if (todayAssigned['date'] == today && todayAssigned[slot] != null) {
+      final msg = await getMessageById(todayAssigned[slot] as String);
+      if (msg != null) return msg;
+      // Assigned message no longer active — fall through to pick a new one.
+    }
+
+    // Fetch all active messages for this slot.
     final snap = await _messages
         .where('slot', isEqualTo: slot)
         .where('active', isEqualTo: true)
-        .orderBy('scheduledDate', descending: true)
-        .limit(1)
         .get();
-
     if (snap.docs.isEmpty) return null;
-    final doc = snap.docs.first;
-    return DailyWMessage.fromMap(doc.data(), doc.id);
+
+    final allMessages =
+        snap.docs.map((d) => DailyWMessage.fromMap(d.data(), d.id)).toList();
+
+    // Filter out seen ones; reset if all have been seen.
+    var pool = allMessages.where((m) => !seenForSlot.contains(m.id)).toList();
+    final didReset = pool.isEmpty;
+    if (didReset) pool = List<DailyWMessage>.from(allMessages);
+
+    pool.shuffle();
+    final picked = pool.first;
+    final newSeenIds = didReset ? [picked.id] : [...seenForSlot, picked.id];
+
+    // Clear stale slot keys when it's a new day.
+    final newAssigned = <String, dynamic>{};
+    if (todayAssigned['date'] == today) {
+      newAssigned.addAll(todayAssigned);
+    }
+    newAssigned['date'] = today;
+    newAssigned[slot] = picked.id;
+
+    seenMessageIds[slot] = newSeenIds;
+
+    await userRef.update({
+      'todayAssigned': newAssigned,
+      'seenMessageIds': seenMessageIds,
+    });
+
+    return picked;
   }
 
   /// Records a like or dislike reaction on a message.

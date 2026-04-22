@@ -46,7 +46,7 @@ void main() async {
 
     // Fallback: show today's current-slot message.
     message ??= await messageService
-        .getTodaysMessage(MessageService.getCurrentSlot())
+        .getOrAssignTodaysMessage(MessageService.getCurrentSlot(), profile.uid)
         .catchError((_) => null);
   }
 

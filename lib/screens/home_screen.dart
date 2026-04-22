@@ -80,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _initialize() async {
     try {
       final profile = await _userService.signInAndLoad();
-      final message = await _messageService.getTodaysMessage(_currentSlot);
+      final message = await _messageService.getOrAssignTodaysMessage(_currentSlot, profile.uid);
       if (mounted) {
         setState(() {
           _profile = profile;
@@ -100,6 +100,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _toggleFavorite() async {
     if (_profile == null || _message == null) return;
+
+    final isAlreadyFavorited = _isFavorited;
+    // Free users are capped at 10 favorites. Gate adding (not removing).
+    if (!isAlreadyFavorited &&
+        !(_profile!.isPremium) &&
+        _profile!.favoriteMessageIds.length >= 10) {
+      await _openPremium();
+      return;
+    }
+
     try {
       final updated = await _userService.toggleFavorite(
         _profile!.uid,

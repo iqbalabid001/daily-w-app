@@ -1,6 +1,8 @@
 // Daily W – Cloud Functions
 // Runs every 30 minutes, checks which users want a notification right now
 // (based on their local time + timezone offset), and sends their W via FCM.
+// Uses per-user message rotation: tracks seen message IDs per slot so the
+// same message is never repeated until all messages for that slot are seen.
 
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { logger } = require('firebase-functions');
@@ -12,21 +14,32 @@ const messaging = admin.messaging();
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-/**
- * Returns today's active message for the given slot, or null if none exists.
- * Mirrors MessageService.getTodaysMessage() in Dart.
- */
-async function getTodaysMessage(slot) {
+/** Returns today's UTC date as 'YYYY-MM-DD'. */
+function todayUTC() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** Fetches ALL active messages for [slot]. */
+async function getAllMessages(slot) {
   const snap = await db.collection('messages')
     .where('slot', '==', slot)
     .where('active', '==', true)
-    .orderBy('scheduledDate', 'desc')
-    .limit(1)
     .get();
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
 
-  if (snap.empty) return null;
-  const doc = snap.docs[0];
-  return { id: doc.id, ...doc.data() };
+/**
+ * Picks a random unseen message from [allMessages].
+ * If all messages have been seen, resets the seen list and picks from the full pool.
+ * Returns { msg, newSeenIds }.
+ */
+function pickUnseen(allMessages, seenIds = []) {
+  let pool = allMessages.filter((m) => !seenIds.includes(m.id));
+  const didReset = pool.length === 0;
+  if (didReset) pool = [...allMessages];
+  const msg = pool[Math.floor(Math.random() * pool.length)];
+  const newSeenIds = didReset ? [msg.id] : [...seenIds, msg.id];
+  return { msg, newSeenIds };
 }
 
 /**
@@ -47,7 +60,7 @@ function pad(n) {
  * user's local time as "HH:MM" rounded to nearest 30 min.
  */
 function localTimeString(utcMinutes, offsetMinutes) {
-  const localRaw = (utcMinutes + offsetMinutes + 1440 * 4) % 1440; // keep positive
+  const localRaw = (utcMinutes + offsetMinutes + 1440 * 4) % 1440;
   const localMinutes = roundToNearest30(localRaw) % 1440;
   const hh = Math.floor(localMinutes / 60);
   const mm = localMinutes % 60;
@@ -66,23 +79,22 @@ exports.sendScheduledNotifications = onSchedule(
   async (_event) => {
     const now = new Date();
     const utcTotalMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
-
-    // Pre-fetch all three slot messages — avoids redundant Firestore reads.
+    const today = todayUTC();
     const slots = ['morning', 'afternoon', 'evening'];
-    const messages = {};
+
+    // Pre-fetch ALL active messages for each slot.
+    const allMessages = {};
     await Promise.all(
       slots.map(async (slot) => {
-        messages[slot] = await getTodaysMessage(slot);
+        allMessages[slot] = await getAllMessages(slot);
       })
     );
 
     logger.info(
       `sendScheduledNotifications fired at UTC ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}`,
-      { messages: Object.fromEntries(slots.map((s) => [s, !!messages[s]])) }
+      { messageCounts: Object.fromEntries(slots.map((s) => [s, allMessages[s].length])) }
     );
 
-    // ── Batch through all users with an FCM token ────────────────────────
-    // For initial launch scale this is fine; paginate at ~1 k+ active users.
     const usersSnap = await db.collection('users')
       .where('fcmToken', '!=', null)
       .get();
@@ -92,8 +104,10 @@ exports.sendScheduledNotifications = onSchedule(
       return;
     }
 
-    // Build per-slot send batches: Map<slot, string[]> of tokens to message
-    const tokensBySlot = { morning: [], afternoon: [], evening: [] };
+    // Per-user: determine which message to send for each slot firing now.
+    // Group by (slot, messageId) so users getting the same message are multicasted together.
+    const groups = {}; // `${slot}:${msgId}` → { slot, msg, tokens: [] }
+    const userDocUpdates = []; // { docRef, data } — flushed to Firestore in batches
 
     for (const doc of usersSnap.docs) {
       const user = doc.data();
@@ -104,32 +118,78 @@ exports.sendScheduledNotifications = onSchedule(
       const localTime = localTimeString(utcTotalMinutes, offsetMinutes);
       const notifTimes = user.notificationTimes ?? {};
 
-      for (const slot of slots) {
-        // Free tier: morning W only. Afternoon + evening require Daily W Pro.
-        if (slot !== 'morning' && !user.isPremium) continue;
+      // Work with mutable copies of the user's rotation state.
+      const seenMessageIds = { ...( user.seenMessageIds ?? {}) };
+      const todayAssigned = { ...(user.todayAssigned ?? {}) };
 
-        if (notifTimes[slot] === localTime && messages[slot]) {
-          tokensBySlot[slot].push(token);
-          break; // one notification per firing, even if times coincidentally match two slots
+      for (const slot of slots) {
+        // Free tier: morning W only.
+        if (slot !== 'morning' && !user.isPremium) continue;
+        if (notifTimes[slot] !== localTime) continue;
+        if (allMessages[slot].length === 0) continue;
+
+        let msg;
+        let needsFirestoreUpdate = false;
+
+        if (todayAssigned.date === today && todayAssigned[slot]) {
+          // Already assigned today — reuse the same message (idempotent).
+          msg = allMessages[slot].find((m) => m.id === todayAssigned[slot]);
+          if (!msg) {
+            // Assigned ID no longer active — pick a fresh one.
+            const result = pickUnseen(allMessages[slot], seenMessageIds[slot] ?? []);
+            msg = result.msg;
+            seenMessageIds[slot] = result.newSeenIds;
+            todayAssigned.date = today;
+            todayAssigned[slot] = msg.id;
+            needsFirestoreUpdate = true;
+          }
+        } else {
+          // New day or first assignment for this slot — pick an unseen message.
+          if (todayAssigned.date !== today) {
+            // Clear stale slot assignments from yesterday.
+            Object.keys(todayAssigned).forEach((k) => { if (k !== 'date') delete todayAssigned[k]; });
+            todayAssigned.date = today;
+          }
+          const result = pickUnseen(allMessages[slot], seenMessageIds[slot] ?? []);
+          msg = result.msg;
+          seenMessageIds[slot] = result.newSeenIds;
+          todayAssigned[slot] = msg.id;
+          needsFirestoreUpdate = true;
         }
+
+        if (needsFirestoreUpdate) {
+          userDocUpdates.push({ docRef: doc.ref, data: { seenMessageIds, todayAssigned } });
+        }
+
+        const groupKey = `${slot}:${msg.id}`;
+        if (!groups[groupKey]) groups[groupKey] = { slot, msg, tokens: [] };
+        groups[groupKey].tokens.push(token);
+
+        break; // one notification per firing
       }
     }
 
-    // ── Send FCM multicast for each slot ─────────────────────────────────
+    // ── Flush Firestore updates in batches of 500 ────────────────────────
+    for (let i = 0; i < userDocUpdates.length; i += 500) {
+      const batch = db.batch();
+      userDocUpdates.slice(i, i + 500).forEach(({ docRef, data }) => {
+        batch.update(docRef, data);
+      });
+      await batch.commit();
+    }
+
+    // ── Send FCM multicast per (slot, message) group ─────────────────────
     const sendPromises = [];
 
-    for (const slot of slots) {
-      const tokens = tokensBySlot[slot];
+    for (const { slot, msg, tokens } of Object.values(groups)) {
       if (tokens.length === 0) continue;
 
-      const msg = messages[slot];
       const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1);
       const title = `${slotLabel} W 💪`;
       const body = msg.text;
 
-      logger.info(`Sending ${slot} W to ${tokens.length} device(s).`);
+      logger.info(`Sending ${slot} W to ${tokens.length} device(s) (msg: ${msg.id}).`);
 
-      // FCM allows max 500 tokens per multicast call.
       for (let i = 0; i < tokens.length; i += 500) {
         const chunk = tokens.slice(i, i + 500);
         sendPromises.push(
@@ -140,7 +200,6 @@ exports.sendScheduledNotifications = onSchedule(
               notification: {
                 channelId: 'daily_w_channel',
                 priority: 'high',
-                // Show full message text without truncation on lock screen.
                 notificationCount: 0,
               },
               priority: 'high',
@@ -164,7 +223,6 @@ exports.sendScheduledNotifications = onSchedule(
 
             if (staleTokens.length > 0) {
               logger.info(`Removing ${staleTokens.length} stale token(s).`);
-              // Batch-remove stale tokens from user docs.
               const batch = db.batch();
               return db.collection('users')
                 .where('fcmToken', 'in', staleTokens)

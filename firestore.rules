@@ -3,8 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Messages: anyone authenticated can read active messages.
-    // Clients may only increment likeCount / dislikeCount — nothing else.
+    // Messages: authenticated users can read active messages and increment reactions.
     match /messages/{messageId} {
       allow read: if request.auth != null && resource.data.active == true;
       allow update: if request.auth != null
@@ -13,9 +12,23 @@ service cloud.firestore {
       allow create, delete: if false; // admin only
     }
 
-    // Users: each user can only read and write their own document
+    // Users: each user can only read and write their own document.
+    // Delete is never allowed from the client.
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, create: if request.auth != null && request.auth.uid == userId;
+
+      allow update: if request.auth != null
+        && request.auth.uid == userId
+        // Free-tier favorites cap: if updating favoriteMessageIds, the new list
+        // must stay at or below 10 unless the user is premium.
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys()
+              .hasAny(['favoriteMessageIds'])
+          || resource.data.get('isPremium', false) == true
+          || request.resource.data.favoriteMessageIds.size() <= 10
+        );
+
+      allow delete: if false;
     }
   }
 }

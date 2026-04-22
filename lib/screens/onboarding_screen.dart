@@ -42,7 +42,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (_currentStep == 1) {
       // Start fetching message in background so step 3 has it ready.
       _messageFuture = MessageService()
-          .getTodaysMessage(MessageService.getCurrentSlot())
+          .getOrAssignTodaysMessage(MessageService.getCurrentSlot(), widget.profile.uid)
           .catchError((_) => null);
     }
     _pageController.nextPage(
@@ -78,7 +78,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _userService.saveProfile(updatedProfile); // fire-and-forget
 
     final message = await (_messageFuture ??
-        MessageService().getTodaysMessage(MessageService.getCurrentSlot()));
+        MessageService().getOrAssignTodaysMessage(MessageService.getCurrentSlot(), widget.profile.uid));
 
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
