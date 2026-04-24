@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — Daily W</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   Helvetica, Arial, sans-serif;
+      background: #0d1b2a;
+      color: #e8edf2;
+      line-height: 1.7;
+      padding: 0 16px 64px;
+    }
+
+    header {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 0 32px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .logo-bolt {
+      width: 40px;
+      height: 40px;
+    }
+
+    .logo-name {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #ff4d6d;
+    }
+
+    header h1 {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+    }
+
+    header p.meta {
+      margin-top: 8px;
+      font-size: 14px;
+      color: rgba(232,237,242,0.50);
+    }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding-top: 40px;
+    }
+
+    section { margin-bottom: 40px; }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ff4d6d;
+      margin-bottom: 12px;
+      letter-spacing: -0.2px;
+    }
+
+    p { margin-bottom: 12px; color: rgba(232,237,242,0.85); }
+
+    ul {
+      margin: 8px 0 12px 20px;
+      color: rgba(232,237,242,0.85);
+    }
+
+    ul li { margin-bottom: 6px; }
+
+    a { color: #ff4d6d; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-top: 12px;
+    }
+
+    footer {
+      max-width: 720px;
+      margin: 48px auto 0;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      font-size: 13px;
+      color: rgba(232,237,242,0.40);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg class="logo-bolt" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="10" fill="#0d1b2a"/>
+      <polygon points="22,4 12,22 20,22 18,36 28,18 20,18" fill="#ff4d6d"/>
+    </svg>
+    <span class="logo-name">Daily W</span>
+  </div>
+  <h1>Privacy Policy</h1>
+  <p class="meta">Effective date: April 24, 2026 &nbsp;·&nbsp; Last updated: April 24, 2026</p>
+</header>
+
+<main>
+
+  <section>
+    <h2>Overview</h2>
+    <p>
+      Daily W ("we", "our", or "the app") is a motivational message app. We are
+      committed to protecting your privacy. This policy explains what data we
+      collect, why we collect it, and how it is stored and used.
+    </p>
+    <p>
+      We do not sell your data. We do not collect your name, email address,
+      phone number, or any personally identifiable information.
+    </p>
+  </section>
+
+  <section>
+    <h2>1. Anonymous Authentication</h2>
+    <p>
+      Daily W signs you in automatically using <strong>Firebase Anonymous
+      Authentication</strong>. This creates a randomly generated user ID (UID)
+      for your session without requiring any account, email, or password.
+    </p>
+    <div class="card">
+      <ul>
+        <li><strong>What is stored:</strong> a random UID (e.g. <code>abc123xyz</code>).</li>
+        <li><strong>What is NOT stored:</strong> name, email, phone number, or any personal identifier.</li>
+        <li><strong>Purpose:</strong> to save your preferences (notification times, tone, favorites) across app sessions and devices.</li>
+      </ul>
+    </div>
+    <p>
+      If you uninstall the app, your anonymous account and associated data are
+      eventually deleted from Firebase.
+    </p>
+  </section>
+
+  <section>
+    <h2>2. Data We Store in Firestore</h2>
+    <p>
+      We use <strong>Google Cloud Firestore</strong> to store your in-app
+      preferences and usage data, linked to your anonymous UID. This data
+      includes:
+    </p>
+    <div class="card">
+      <ul>
+        <li>Your chosen notification times (morning, afternoon, evening).</li>
+        <li>Your tone preference (e.g. sarcastic, gentle, hype).</li>
+        <li>Optional nickname (chosen by you, can be left blank).</li>
+        <li>IDs of messages you have favourited.</li>
+        <li>IDs of messages you have seen (for rotation — so you don't see the same message twice).</li>
+        <li>Your current streak count and last-opened date.</li>
+        <li>Your FCM push notification token (see Section 3).</li>
+        <li>Whether your account has an active Daily W Pro subscription (true/false).</li>
+        <li>Your device timezone offset in minutes.</li>
+      </ul>
+    </div>
+    <p>
+      None of this data contains personally identifiable information. It is
+      used solely to operate the app's features.
+    </p>
+  </section>
+
+  <section>
+    <h2>3. Push Notification Tokens (FCM)</h2>
+    <p>
+      To deliver your daily motivational messages as push notifications, we use
+      <strong>Firebase Cloud Messaging (FCM)</strong>. When you grant notification
+      permission, your device's FCM token is stored in Firestore linked to your
+      anonymous UID.
+    </p>
+    <div class="card">
+      <ul>
+        <li><strong>What it is:</strong> an opaque device identifier generated by Google, used only to route push notifications to your device.</li>
+        <li><strong>What it is NOT:</strong> your phone number, email, or any personal contact detail.</li>
+        <li><strong>How it is used:</strong> our Cloud Function reads this token to send you your daily W at the times you chose.</li>
+        <li><strong>Deletion:</strong> invalid or stale tokens are automatically removed when a push fails to deliver.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>4. Subscriptions and Payments</h2>
+    <p>
+      Daily W Pro subscriptions are processed entirely by the
+      <strong>Google Play Store</strong>. We use
+      <strong>RevenueCat</strong> to manage subscription status.
+    </p>
+    <div class="card">
+      <ul>
+        <li>We do <strong>not</strong> collect, see, or store your payment card details, billing address, or any financial information.</li>
+        <li>All payment processing is handled by Google Play and is governed by Google's privacy policy.</li>
+        <li>RevenueCat receives your anonymous UID and subscription status to verify entitlements. RevenueCat's privacy policy: <a href="https://www.revenuecat.com/privacy" target="_blank">revenuecat.com/privacy</a>.</li>
+        <li>We store only a boolean (<code>isPremium: true/false</code>) in Firestore to gate features in the app.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>5. Analytics and Crash Reporting</h2>
+    <p>
+      Daily W does not currently use any analytics SDK or crash reporting service
+      beyond what Firebase provides as part of its core infrastructure (e.g.
+      Firebase Performance, Crashlytics). No behavioural analytics or ad-targeting
+      data is collected.
+    </p>
+  </section>
+
+  <section>
+    <h2>6. Third-Party Services</h2>
+    <p>The app uses the following third-party services, each governed by their own privacy policy:</p>
+    <div class="card">
+      <ul>
+        <li><strong>Firebase (Google)</strong> — Authentication, Firestore database, Cloud Functions, Cloud Messaging. <a href="https://firebase.google.com/support/privacy" target="_blank">Privacy policy</a>.</li>
+        <li><strong>RevenueCat</strong> — Subscription management. <a href="https://www.revenuecat.com/privacy" target="_blank">Privacy policy</a>.</li>
+        <li><strong>Google Play</strong> — App distribution and payment processing. <a href="https://policies.google.com/privacy" target="_blank">Privacy policy</a>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>7. Data Retention and Deletion</h2>
+    <p>
+      Your Firestore data is retained as long as the app is installed. Because
+      Daily W uses anonymous authentication, there is no account deletion flow —
+      uninstalling the app effectively ends your session. Residual Firestore
+      documents may remain for a period before automatic cleanup.
+    </p>
+    <p>
+      If you would like your data deleted manually, contact us at the address
+      below and include your device's anonymous UID (visible in the app's
+      Settings screen). We will delete your Firestore document within 30 days.
+    </p>
+  </section>
+
+  <section>
+    <h2>8. Children's Privacy</h2>
+    <p>
+      Daily W is not directed at children under 13. We do not knowingly collect
+      any data from children. If you believe a child has used the app and you
+      wish for their data to be removed, contact us at the address below.
+    </p>
+  </section>
+
+  <section>
+    <h2>9. Changes to This Policy</h2>
+    <p>
+      We may update this privacy policy from time to time. The effective date at
+      the top of this page will reflect the most recent revision. Continued use
+      of the app after changes are posted constitutes acceptance of the updated
+      policy.
+    </p>
+  </section>
+
+  <section>
+    <h2>10. Contact</h2>
+    <p>
+      Questions or data deletion requests can be sent to:<br/>
+      <a href="mailto:m.iqbalabid98@gmail.com">m.iqbalabid98@gmail.com</a>
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  <p>&copy; 2026 Daily W. All rights reserved.</p>
+</footer>
+
+</body>
+</html>
