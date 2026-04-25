@@ -3,8 +3,8 @@ import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-/// RevenueCat Android public API key (test key — swap for production before release).
-const kRevenueCatAndroidKey = 'test_efebMeRaZywNvDJaYVkOKvHUaRc';
+/// RevenueCat Android public API key (production).
+const kRevenueCatAndroidKey = 'goog_xhOrvsERwocvXcXwVezdRuSuXGf';
 
 /// Entitlement identifier — must match the one created in the RevenueCat dashboard.
 const kPremiumEntitlement = 'Daily W Pro';
