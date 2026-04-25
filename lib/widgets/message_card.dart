@@ -46,16 +46,29 @@ class MessageCard extends StatefulWidget {
 }
 
 class _MessageCardState extends State<MessageCard>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
+  // W! pop — card scale burst
   late AnimationController _popController;
   late Animation<double> _scaleAnim;
+
+  // Nah shake — horizontal wobble
+  late AnimationController _shakeController;
+  late Animation<double> _shakeAnim;
+
+  // Nah emoji — 👎 scale burst
+  late AnimationController _nahEmojiController;
+  late Animation<double> _nahEmojiScaleAnim;
 
   bool _liked = false;
   bool _disliked = false;
 
+  static const _nahRed = Color(0xFFE05252);
+
   @override
   void initState() {
     super.initState();
+
+    // W! pop
     _popController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
@@ -63,11 +76,36 @@ class _MessageCardState extends State<MessageCard>
     _scaleAnim = Tween<double>(begin: 1.0, end: 1.06).animate(
       CurvedAnimation(parent: _popController, curve: Curves.easeOut),
     );
+
+    // Nah shake — 3 left-right cycles, 420 ms total
+    _shakeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    _shakeAnim = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: -9.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -9.0, end: 9.0), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 9.0, end: -7.0), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: -7.0, end: 7.0), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 7.0, end: 0.0), weight: 1),
+    ]).animate(CurvedAnimation(parent: _shakeController, curve: Curves.easeInOut));
+
+    // Nah emoji scale — pop up then settle
+    _nahEmojiController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _nahEmojiScaleAnim = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.65), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 1.65, end: 1.0), weight: 1),
+    ]).animate(CurvedAnimation(parent: _nahEmojiController, curve: Curves.easeOut));
   }
 
   @override
   void dispose() {
     _popController.dispose();
+    _shakeController.dispose();
+    _nahEmojiController.dispose();
     super.dispose();
   }
 
@@ -84,6 +122,8 @@ class _MessageCardState extends State<MessageCard>
   void _onDislike() {
     if (_liked || _disliked) return;
     setState(() => _disliked = true);
+    _shakeController.forward(from: 0);
+    _nahEmojiController.forward(from: 0);
     widget.onDislike?.call();
   }
 
@@ -155,16 +195,57 @@ class _MessageCardState extends State<MessageCard>
                   onTap: _onLike,
                 ),
                 const SizedBox(width: 8),
-                // Nah button
-                _ReactionButton(
-                  emoji: '👎',
-                  label: 'Nah',
-                  activeEmoji: '👎',
-                  activeLabel: 'Nah',
-                  isActive: _disliked,
-                  isDisabled: _liked,
-                  activeColor: AppTheme.mutedText,
-                  onTap: _onDislike,
+                // Nah button — shake + emoji scale + muted red on tap
+                AnimatedBuilder(
+                  animation: Listenable.merge(
+                      [_shakeController, _nahEmojiController]),
+                  builder: (context, _) {
+                    final effectiveColor = _disliked
+                        ? _nahRed
+                        : AppTheme.mutedText.withValues(alpha: 0.7);
+                    return Transform.translate(
+                      offset: Offset(_shakeAnim.value, 0),
+                      child: GestureDetector(
+                        onTap: (_liked || _disliked) ? null : _onDislike,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeOut,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _disliked
+                                ? _nahRed.withValues(alpha: 0.14)
+                                : Colors.white.withValues(alpha: 0.04),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: _disliked
+                                  ? _nahRed.withValues(alpha: 0.40)
+                                  : AppTheme.mutedText.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Transform.scale(
+                                scale: _nahEmojiScaleAnim.value,
+                                child: const Text('👎',
+                                    style: TextStyle(fontSize: 14)),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Nah',
+                                style: TextStyle(
+                                  color: effectiveColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 const Spacer(),
                 // Save
