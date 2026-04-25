@@ -55,6 +55,11 @@ android {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
+            // Skip native symbol stripping — NDK strip tool not required for Play upload.
+            // Google Play re-processes symbols server-side anyway.
+            ndk {
+                debugSymbolLevel = "NONE"
+            }
         }
     }
 }
