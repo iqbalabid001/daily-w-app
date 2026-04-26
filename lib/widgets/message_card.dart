@@ -29,8 +29,9 @@ class MessageCard extends StatefulWidget {
   final DailyWMessage message;
   final bool isFavorited;
   final VoidCallback onFavoriteToggle;
-  final VoidCallback? onLike;
-  final VoidCallback? onDislike;
+  /// Called whenever the reaction changes. Value is 'liked', 'disliked', or
+  /// null (cleared). Replaces the old onLike / onDislike pair.
+  final void Function(String? reaction)? onReactionChanged;
   /// Persisted reaction from Firestore: 'liked', 'disliked', or null.
   final String? initialReaction;
 
@@ -39,8 +40,7 @@ class MessageCard extends StatefulWidget {
     required this.message,
     required this.isFavorited,
     required this.onFavoriteToggle,
-    this.onLike,
-    this.onDislike,
+    this.onReactionChanged,
     this.initialReaction,
   });
 
@@ -118,18 +118,27 @@ class _MessageCardState extends State<MessageCard>
       _popController.forward().then((_) => _popController.reverse());
 
   void _onLike() {
-    if (_liked || _disliked) return;
-    setState(() => _liked = true);
-    _pop();
-    widget.onLike?.call();
+    final newReaction = _liked ? null : 'liked'; // toggle off if already liked
+    setState(() {
+      _liked = newReaction == 'liked';
+      _disliked = false; // clear opposing reaction
+    });
+    if (_liked) _pop(); // only animate when setting, not clearing
+    widget.onReactionChanged?.call(newReaction);
   }
 
   void _onDislike() {
-    if (_liked || _disliked) return;
-    setState(() => _disliked = true);
-    _shakeController.forward(from: 0);
-    _nahEmojiController.forward(from: 0);
-    widget.onDislike?.call();
+    final newReaction = _disliked ? null : 'disliked'; // toggle off if already disliked
+    setState(() {
+      _disliked = newReaction == 'disliked';
+      _liked = false; // clear opposing reaction
+    });
+    if (_disliked) {
+      // only animate when setting, not clearing
+      _shakeController.forward(from: 0);
+      _nahEmojiController.forward(from: 0);
+    }
+    widget.onReactionChanged?.call(newReaction);
   }
 
   void _onShare() {
@@ -195,7 +204,6 @@ class _MessageCardState extends State<MessageCard>
                   activeEmoji: '❤️',
                   activeLabel: 'W!',
                   isActive: _liked,
-                  isDisabled: _disliked,
                   activeColor: AppTheme.accent,
                   onTap: _onLike,
                 ),
@@ -211,7 +219,7 @@ class _MessageCardState extends State<MessageCard>
                     return Transform.translate(
                       offset: Offset(_shakeAnim.value, 0),
                       child: GestureDetector(
-                        onTap: (_liked || _disliked) ? null : _onDislike,
+                        onTap: _onDislike,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 180),
                           curve: Curves.easeOut,
@@ -329,7 +337,6 @@ class _ReactionButton extends StatelessWidget {
   final String activeEmoji;
   final String activeLabel;
   final bool isActive;
-  final bool isDisabled;
   final Color activeColor;
   final VoidCallback onTap;
 
@@ -339,7 +346,6 @@ class _ReactionButton extends StatelessWidget {
     required this.activeEmoji,
     required this.activeLabel,
     required this.isActive,
-    required this.isDisabled,
     required this.activeColor,
     required this.onTap,
   });
@@ -356,7 +362,7 @@ class _ReactionButton extends StatelessWidget {
         : AppTheme.mutedText.withValues(alpha: 0.2);
 
     return GestureDetector(
-      onTap: (isActive || isDisabled) ? null : onTap,
+      onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,

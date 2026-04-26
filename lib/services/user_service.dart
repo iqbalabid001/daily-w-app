@@ -112,11 +112,15 @@ class UserService {
     return profile.copyWith(isPremium: value);
   }
 
-  /// Records the user's reaction ('liked' or 'disliked') for a specific message.
-  /// Uses a dotted-path update so only the keyed entry is written.
-  Future<void> saveReaction(String uid, String messageId, String reaction) async {
+  /// Saves or clears the user's reaction for a specific message.
+  /// Pass null to delete the entry (undo). Uses a dotted-path update so only
+  /// the keyed entry is touched.
+  Future<void> saveReaction(String uid, String messageId, String? reaction) async {
     try {
-      await _users.doc(uid).update({'messageReactions.$messageId': reaction});
+      await _users.doc(uid).update({
+        'messageReactions.$messageId':
+            reaction ?? FieldValue.delete(),
+      });
     } catch (_) {
       // Non-critical — button state is updated locally regardless.
     }

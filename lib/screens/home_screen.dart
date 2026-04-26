@@ -130,31 +130,23 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _onLike() {
+  void _onReactionChanged(String? reaction) {
     if (_message == null || _profile == null) return;
-    _messageService.recordReaction(_message!.id, true);
-    _userService.saveReaction(_profile!.uid, _message!.id, 'liked');
+    final messageId = _message!.id;
+    // Record aggregate counts only when setting (not clearing).
+    if (reaction == 'liked') _messageService.recordReaction(messageId, true);
+    if (reaction == 'disliked') _messageService.recordReaction(messageId, false);
+    // Persist user reaction (null = FieldValue.delete in service).
+    _userService.saveReaction(_profile!.uid, messageId, reaction);
+    // Update local profile so initialReaction stays in sync.
     setState(() {
-      _profile = _profile!.copyWith(
-        messageReactions: {
-          ..._profile!.messageReactions,
-          _message!.id: 'liked',
-        },
-      );
-    });
-  }
-
-  void _onDislike() {
-    if (_message == null || _profile == null) return;
-    _messageService.recordReaction(_message!.id, false);
-    _userService.saveReaction(_profile!.uid, _message!.id, 'disliked');
-    setState(() {
-      _profile = _profile!.copyWith(
-        messageReactions: {
-          ..._profile!.messageReactions,
-          _message!.id: 'disliked',
-        },
-      );
+      final reactions = Map<String, String>.from(_profile!.messageReactions);
+      if (reaction == null) {
+        reactions.remove(messageId);
+      } else {
+        reactions[messageId] = reaction;
+      }
+      _profile = _profile!.copyWith(messageReactions: reactions);
     });
   }
 
@@ -280,8 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
             message: _message!,
             isFavorited: _isFavorited,
             onFavoriteToggle: _toggleFavorite,
-            onLike: _onLike,
-            onDislike: _onDislike,
+            onReactionChanged: _onReactionChanged,
             initialReaction: _profile?.messageReactions[_message!.id],
           ),
         ],
