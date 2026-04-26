@@ -112,6 +112,16 @@ class UserService {
     return profile.copyWith(isPremium: value);
   }
 
+  /// Records the user's reaction ('liked' or 'disliked') for a specific message.
+  /// Uses a dotted-path update so only the keyed entry is written.
+  Future<void> saveReaction(String uid, String messageId, String reaction) async {
+    try {
+      await _users.doc(uid).update({'messageReactions.$messageId': reaction});
+    } catch (_) {
+      // Non-critical — button state is updated locally regardless.
+    }
+  }
+
   /// Saves the FCM token and current device timezone offset.
   /// Called on every app launch so stale tokens and timezone shifts are
   /// caught automatically.

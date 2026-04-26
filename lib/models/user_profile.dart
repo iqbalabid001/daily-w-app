@@ -17,6 +17,10 @@ class UserProfile {
   /// Used to compute streak increments and resets.
   final String? lastOpenedDate;
 
+  /// Per-message reaction, keyed by message ID. Values: 'liked' | 'disliked'.
+  /// Persisted so the W!/Nah button state survives app restarts.
+  final Map<String, String> messageReactions;
+
   const UserProfile({
     required this.uid,
     this.nickname,
@@ -32,6 +36,7 @@ class UserProfile {
     },
     this.timezoneOffsetMinutes = 0,
     this.lastOpenedDate,
+    this.messageReactions = const {},
   });
 
   factory UserProfile.fromMap(Map<String, dynamic> map, String uid) {
@@ -56,6 +61,8 @@ class UserProfile {
       notificationTimes: times,
       timezoneOffsetMinutes: map['timezoneOffsetMinutes'] as int? ?? 0,
       lastOpenedDate: map['lastOpenedDate'] as String?,
+      messageReactions: Map<String, String>.from(
+          map['messageReactions'] as Map? ?? {}),
     );
   }
 
@@ -69,6 +76,7 @@ class UserProfile {
         'notificationTimes': notificationTimes,
         'timezoneOffsetMinutes': timezoneOffsetMinutes,
         'lastOpenedDate': lastOpenedDate,
+        'messageReactions': messageReactions,
       };
 
   /// Nullable [nickname] is supported: pass `nickname: null` to explicitly
@@ -83,6 +91,7 @@ class UserProfile {
     Map<String, String>? notificationTimes,
     int? timezoneOffsetMinutes,
     String? lastOpenedDate,
+    Map<String, String>? messageReactions,
   }) {
     return UserProfile(
       uid: uid,
@@ -98,6 +107,7 @@ class UserProfile {
       timezoneOffsetMinutes:
           timezoneOffsetMinutes ?? this.timezoneOffsetMinutes,
       lastOpenedDate: lastOpenedDate ?? this.lastOpenedDate,
+      messageReactions: messageReactions ?? this.messageReactions,
     );
   }
 

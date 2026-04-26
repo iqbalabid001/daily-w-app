@@ -31,6 +31,8 @@ class MessageCard extends StatefulWidget {
   final VoidCallback onFavoriteToggle;
   final VoidCallback? onLike;
   final VoidCallback? onDislike;
+  /// Persisted reaction from Firestore: 'liked', 'disliked', or null.
+  final String? initialReaction;
 
   const MessageCard({
     super.key,
@@ -39,6 +41,7 @@ class MessageCard extends StatefulWidget {
     required this.onFavoriteToggle,
     this.onLike,
     this.onDislike,
+    this.initialReaction,
   });
 
   @override
@@ -59,14 +62,16 @@ class _MessageCardState extends State<MessageCard>
   late AnimationController _nahEmojiController;
   late Animation<double> _nahEmojiScaleAnim;
 
-  bool _liked = false;
-  bool _disliked = false;
+  late bool _liked;
+  late bool _disliked;
 
   static const _nahRed = Color(0xFFE05252);
 
   @override
   void initState() {
     super.initState();
+    _liked    = widget.initialReaction == 'liked';
+    _disliked = widget.initialReaction == 'disliked';
 
     // W! pop
     _popController = AnimationController(

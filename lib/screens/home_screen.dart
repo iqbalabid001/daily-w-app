@@ -131,13 +131,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onLike() {
-    if (_message == null) return;
+    if (_message == null || _profile == null) return;
     _messageService.recordReaction(_message!.id, true);
+    _userService.saveReaction(_profile!.uid, _message!.id, 'liked');
+    setState(() {
+      _profile = _profile!.copyWith(
+        messageReactions: {
+          ..._profile!.messageReactions,
+          _message!.id: 'liked',
+        },
+      );
+    });
   }
 
   void _onDislike() {
-    if (_message == null) return;
+    if (_message == null || _profile == null) return;
     _messageService.recordReaction(_message!.id, false);
+    _userService.saveReaction(_profile!.uid, _message!.id, 'disliked');
+    setState(() {
+      _profile = _profile!.copyWith(
+        messageReactions: {
+          ..._profile!.messageReactions,
+          _message!.id: 'disliked',
+        },
+      );
+    });
   }
 
   bool get _isFavorited =>
@@ -264,6 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onFavoriteToggle: _toggleFavorite,
             onLike: _onLike,
             onDislike: _onDislike,
+            initialReaction: _profile?.messageReactions[_message!.id],
           ),
         ],
       ),
